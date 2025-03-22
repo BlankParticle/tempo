@@ -2,12 +2,9 @@ package com.cappielloantonio.tempo.repository;
 
 
 import android.net.Uri;
-import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Observer;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
@@ -20,9 +17,7 @@ import com.cappielloantonio.tempo.database.dao.ChronologyDao;
 import com.cappielloantonio.tempo.database.dao.SessionMediaItemDao;
 import com.cappielloantonio.tempo.glide.CustomGlideRequest;
 import com.cappielloantonio.tempo.model.Chronology;
-import com.cappielloantonio.tempo.model.Download;
 import com.cappielloantonio.tempo.model.SessionMediaItem;
-import com.cappielloantonio.tempo.service.DownloaderManager;
 import com.cappielloantonio.tempo.subsonic.base.ApiResponse;
 import com.cappielloantonio.tempo.subsonic.models.AlbumID3;
 import com.cappielloantonio.tempo.subsonic.models.Artist;
@@ -34,7 +29,6 @@ import com.cappielloantonio.tempo.subsonic.models.InternetRadioStation;
 import com.cappielloantonio.tempo.subsonic.models.MusicFolder;
 import com.cappielloantonio.tempo.subsonic.models.Playlist;
 import com.cappielloantonio.tempo.subsonic.models.PodcastEpisode;
-import com.cappielloantonio.tempo.util.DownloadUtil;
 import com.cappielloantonio.tempo.util.MappingUtil;
 import com.cappielloantonio.tempo.util.MusicUtil;
 import com.cappielloantonio.tempo.util.Preferences;
@@ -51,6 +45,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+@UnstableApi
 public class AutomotiveRepository {
     private final SessionMediaItemDao sessionMediaItemDao = AppDatabase.getInstance().sessionMediaItemDao();
     private final ChronologyDao chronologyDao = AppDatabase.getInstance().chronologyDao();

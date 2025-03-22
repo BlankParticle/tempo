@@ -6,8 +6,8 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.view.View;
+import android.window.OnBackInvokedDispatcher;
 
 import androidx.annotation.NonNull;
 import androidx.core.splashscreen.SplashScreen;
@@ -20,7 +20,6 @@ import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
 
 import com.cappielloantonio.tempo.App;
-import com.cappielloantonio.tempo.BuildConfig;
 import com.cappielloantonio.tempo.R;
 import com.cappielloantonio.tempo.broadcast.receiver.ConnectivityStatusBroadcastReceiver;
 import com.cappielloantonio.tempo.databinding.ActivityMainBinding;
@@ -47,15 +46,43 @@ public class MainActivity extends BaseActivity {
     private static final String TAG = "MainActivityLogs";
 
     public ActivityMainBinding bind;
-    private MainViewModel mainViewModel;
+    private final BottomSheetBehavior.BottomSheetCallback bottomSheetCallback =
+            new BottomSheetBehavior.BottomSheetCallback() {
+                int navigationHeight;
 
+                @Override
+                public void onStateChanged(@NonNull View view, int state) {
+                    PlayerBottomSheetFragment playerBottomSheetFragment = (PlayerBottomSheetFragment) getSupportFragmentManager().findFragmentByTag("PlayerBottomSheet");
+
+                    switch (state) {
+                        case BottomSheetBehavior.STATE_HIDDEN:
+                            resetMusicSession();
+                            break;
+                        case BottomSheetBehavior.STATE_COLLAPSED:
+                            if (playerBottomSheetFragment != null)
+                                playerBottomSheetFragment.goBackToFirstPage();
+                            break;
+                        case BottomSheetBehavior.STATE_SETTLING:
+                        case BottomSheetBehavior.STATE_EXPANDED:
+                        case BottomSheetBehavior.STATE_DRAGGING:
+                        case BottomSheetBehavior.STATE_HALF_EXPANDED:
+                            break;
+                    }
+                }
+
+                @Override
+                public void onSlide(@NonNull View view, float slideOffset) {
+                    animateBottomSheet(slideOffset);
+                    animateBottomNavigation(slideOffset, navigationHeight);
+                }
+            };
+    public NavController navController;
+    ConnectivityStatusBroadcastReceiver connectivityStatusBroadcastReceiver;
+    private MainViewModel mainViewModel;
     private FragmentManager fragmentManager;
     private NavHostFragment navHostFragment;
     private BottomNavigationView bottomNavigationView;
-    public NavController navController;
     private BottomSheetBehavior bottomSheetBehavior;
-
-    ConnectivityStatusBroadcastReceiver connectivityStatusBroadcastReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +104,17 @@ public class MainActivity extends BaseActivity {
         checkConnectionType();
         getOpenSubsonicExtensions();
         checkTempoUpdate();
+
+        getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                () -> {
+                    if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED)
+                        collapseBottomSheetDelayed();
+                    else
+                        getOnBackPressedDispatcher().onBackPressed();
+                }
+        );
+
     }
 
     @Override
@@ -96,14 +134,6 @@ public class MainActivity extends BaseActivity {
         super.onDestroy();
         connectivityStatusReceiverManager(false);
         bind = null;
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_EXPANDED)
-            collapseBottomSheetDelayed();
-        else
-            super.onBackPressed();
     }
 
     public void init() {
@@ -163,37 +193,6 @@ public class MainActivity extends BaseActivity {
     public void setBottomSheetDraggableState(Boolean isDraggable) {
         bottomSheetBehavior.setDraggable(isDraggable);
     }
-
-    private final BottomSheetBehavior.BottomSheetCallback bottomSheetCallback =
-            new BottomSheetBehavior.BottomSheetCallback() {
-                int navigationHeight;
-
-                @Override
-                public void onStateChanged(@NonNull View view, int state) {
-                    PlayerBottomSheetFragment playerBottomSheetFragment = (PlayerBottomSheetFragment) getSupportFragmentManager().findFragmentByTag("PlayerBottomSheet");
-
-                    switch (state) {
-                        case BottomSheetBehavior.STATE_HIDDEN:
-                            resetMusicSession();
-                            break;
-                        case BottomSheetBehavior.STATE_COLLAPSED:
-                            if (playerBottomSheetFragment != null)
-                                playerBottomSheetFragment.goBackToFirstPage();
-                            break;
-                        case BottomSheetBehavior.STATE_SETTLING:
-                        case BottomSheetBehavior.STATE_EXPANDED:
-                        case BottomSheetBehavior.STATE_DRAGGING:
-                        case BottomSheetBehavior.STATE_HALF_EXPANDED:
-                            break;
-                    }
-                }
-
-                @Override
-                public void onSlide(@NonNull View view, float slideOffset) {
-                    animateBottomSheet(slideOffset);
-                    animateBottomNavigation(slideOffset, navigationHeight);
-                }
-            };
 
     private void animateBottomSheet(float slideOffset) {
         PlayerBottomSheetFragment playerBottomSheetFragment = (PlayerBottomSheetFragment) getSupportFragmentManager().findFragmentByTag("PlayerBottomSheet");
@@ -386,7 +385,7 @@ public class MainActivity extends BaseActivity {
     }
 
     private void checkTempoUpdate() {
-        if (BuildConfig.FLAVOR.equals("tempo") && Preferences.showTempoUpdateDialog()) {
+        if (Preferences.showTempoUpdateDialog()) {
             mainViewModel.checkTempoUpdate().observe(this, latestRelease -> {
                 if (latestRelease != null && UpdateUtil.showUpdateDialog(latestRelease)) {
                     GithubTempoUpdateDialog dialog = new GithubTempoUpdateDialog(latestRelease);

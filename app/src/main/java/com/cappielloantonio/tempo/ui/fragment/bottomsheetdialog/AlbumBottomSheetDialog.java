@@ -39,7 +39,6 @@ import com.cappielloantonio.tempo.util.Preferences;
 import com.cappielloantonio.tempo.viewmodel.AlbumBottomSheetViewModel;
 import com.cappielloantonio.tempo.viewmodel.HomeViewModel;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
-import com.google.android.material.snackbar.Snackbar;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import java.util.ArrayList;
@@ -114,6 +113,7 @@ public class AlbumBottomSheetDialog extends BottomSheetDialogFragment implements
                 }
 
                 @Override
+                @SuppressWarnings("unchecked")
                 public void onLoadMedia(List<?> media) {
                     MusicUtil.ratingFilter((ArrayList<Child>) media);
 
